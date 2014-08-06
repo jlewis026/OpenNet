@@ -1,0 +1,6 @@
+* Pthreads
+* ldl
+* g++
+* libuuid(-dev)
+* libcrypto++-dev
+* libfuse-dev
