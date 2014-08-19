@@ -113,7 +113,16 @@ public:
 	Certificate* FindCertificate(const std::string& thumbprint) {
 		sqlite3_bind_text(command_findcert, 1, thumbprint.data(), thumbprint.size(), 0);
 		int val;
-
+		Certificate* retval = 0;
+		while ((val = sqlite3_step(command_findcert)) != SQLITE_DONE) {
+			if (val == SQLITE_ROW) {
+				retval = new Certificate();
+				retval->PublicKey.resize(sqlite3_column_bytes(command_findcert, 1));
+				memcpy(retval->PublicKey.data(), sqlite3_column_blob(command_findcert, 1),retval->PublicKey.size());
+				retval->Authority = (const char*)sqlite3_column_text(command_findcert, 2);
+				
+			}
+		}
 	}
 	KeyDatabase() {
 		sqlite3_open("keydb.db", &db);
