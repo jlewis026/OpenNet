@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <OpenNet.h>
 std::string string_to_hex(const unsigned char* input, size_t len)
 {
 	static const char* const lut = "0123456789ABCDEF";
@@ -49,6 +50,77 @@ class IDisposable {
 public:
 	virtual ~IDisposable(){};
 };
+class SafeResizableBuffer {
+public:
+	//This is a car
+	unsigned char* buffer;
+	size_t sz;
+	SafeResizableBuffer() {
+		buffer = 0;
+		position = 0;
+	}
+	size_t position;
+	int Read(void* buffer, int count) {
+		if (position + count > sz) {
+			//BARFIZARD!
+			throw "up";
+		}
+		memcpy(buffer, this->buffer + position, count);
+		position += count;
+		return count;
+	}
+	void Write(const void* buffer, int count) {
+		if (position + count > sz) {
+			size_t allocsz = std::max(position + count, sz * 2);
+			unsigned char* izard = new unsigned char[allocsz];
+
+		}
+		memcpy(this->buffer, buffer, count);
+	}
+	~SafeResizableBuffer() {
+
+	}
+};
+class SafeBuffer {
+public:
+	void* ptr;
+	size_t sz;
+	int Read(unsigned char* buffer, int count) {
+		if (pos + count > sz) {
+			throw "up";
+		}
+
+		memcpy(buffer, ((unsigned char*)ptr) + pos, count);
+
+		pos += count;
+		return count;
+	}
+	void Write(unsigned char* data, int count) {
+		if (pos + count > sz) {
+			throw "up";
+		}
+		memcpy(((unsigned char*)ptr) + pos, data, count);
+
+		pos += count;
+	}
+	size_t pos;
+	int64_t GetLength() {
+		return (int64_t)sz;
+	}
+	template<typename T>
+	void Read(T& val) {
+		Read(pos, (unsigned char*)&val, sizeof(val));
+	}
+	template<typename T>
+	void Write(const T& val) {
+		Write(pos, (unsigned char*)&val, sizeof(val));
+	}
+	SafeBuffer(void* ptr, size_t sz) {
+		this->ptr = ptr;
+		this->sz = sz;
+		pos = 0;
+	}
+};
 class Certificate:public IDisposable {
 public:
 	std::vector<unsigned char> PublicKey;
@@ -56,23 +128,27 @@ public:
 	std::string Authority;
 	std::map<std::string, std::vector<unsigned char>> Properties;
 	std::vector<unsigned char> SignProperties() {
-		std::vector<unsigned char> retval;
+		//Max size limit is stupid
+		
+		SafeResizableBuffer s(buffer, 1024 * 50);
 		//Message at beginning; signature at end
-		size_t pos = 0;
+		uint32_t ct = (uint32_t)Properties.size();
+		s.Write(ct);
 		for (auto it = Properties.begin(); it != Properties.end(); it++) {
-			//Write property name
-			retval.resize(retval.size() + (sizeof(uint32_t)+it->first.size()));
-			memcpy((unsigned char*)retval.data() + pos, it->first.data(), it->first.size());
-			pos += retval.size() + (sizeof(uint32_t) + it->first.size());
-			//Write property value
-			retval.resize(retval.size() + (sizeof(uint32_t) + it->second.size()));
-			memcpy((unsigned char*)retval.data() + pos, it->second.data(), it->second.size());
-			pos += retval.size() + (sizeof(uint32_t) + it->second.size());
+			uint32_t sz = it->first.size();
+			s.Write(sz);
+			s.Write((unsigned char*)it->first.data(),(int)it->first.size());
+			sz = it->second.size();
+			s.Write(sz);
+			s.Write(it->second.data(), (int)it->second.size());
 		}
-		size_t sigsegv = CreateSignature(retval.data(), retval.size(), 0);
-		size_t oldsz = retval.size();
-		retval.resize(retval.size() + sigsegv);
-		sigsegv = CreateSignature(retval.data(), oldsz, (unsigned char*)retval.data() + oldsz);
+
+		size_t sigsegv = CreateSignature((const unsigned char*)s.ptr, s.pos, 0);
+		size_t oldsz = s.pos;
+		std::vector<unsigned char> retval;
+		retval.resize(oldsz + sigsegv);
+		memcpy(retval.data(), s.ptr, oldsz);
+		sigsegv = CreateSignature((unsigned char*)retval.data(), oldsz, (unsigned char*)retval.data() + oldsz);
 		return retval;
 	}
 };
@@ -120,7 +196,21 @@ public:
 				retval->PublicKey.resize(sqlite3_column_bytes(command_findcert, 1));
 				memcpy(retval->PublicKey.data(), sqlite3_column_blob(command_findcert, 1),retval->PublicKey.size());
 				retval->Authority = (const char*)sqlite3_column_text(command_findcert, 2);
-				
+				//TODO: Deserialize properties from verified blob
+				SafeBuffer s((void*)sqlite3_column_blob(command_findcert, 3), sqlite3_column_bytes(command_findcert, 3));
+				uint32_t sz;
+				s.Read(sz);
+				for (uint32_t i = 0; i < sz; i++) {
+					uint32_t sz;
+					s.Read(sz);
+					char propname[256];
+					if (sz > 256) {
+						throw "up";
+					}
+					s.Read((unsigned char*)propname,sz);
+					s.Read(sz);
+					
+				}
 			}
 		}
 	}
