@@ -59,6 +59,14 @@ public:
 		buffer = 0;
 		position = 0;
 	}
+	template<typename T>
+	void Write(const T& value) {
+		Write(&value,sizeof(value));
+	}
+	template<typename T>
+	int Read(T& value) {
+		return Read(&value,sizeof(value));
+	}
 	size_t position;
 	int Read(void* buffer, int count) {
 		if (position + count > sz) {
@@ -73,12 +81,15 @@ public:
 		if (position + count > sz) {
 			size_t allocsz = std::max(position + count, sz * 2);
 			unsigned char* izard = new unsigned char[allocsz];
-
+			memcpy(izard,this->buffer,sz);
+			delete[] this->buffer;
 		}
 		memcpy(this->buffer, buffer, count);
 	}
 	~SafeResizableBuffer() {
-
+		if(buffer) {
+		delete[] buffer;
+		}
 	}
 };
 class SafeBuffer {
@@ -130,7 +141,7 @@ public:
 	std::vector<unsigned char> SignProperties() {
 		//Max size limit is stupid
 		
-		SafeResizableBuffer s(buffer, 1024 * 50);
+		SafeResizableBuffer s;
 		//Message at beginning; signature at end
 		uint32_t ct = (uint32_t)Properties.size();
 		s.Write(ct);
@@ -143,11 +154,11 @@ public:
 			s.Write(it->second.data(), (int)it->second.size());
 		}
 
-		size_t sigsegv = CreateSignature((const unsigned char*)s.ptr, s.pos, 0);
-		size_t oldsz = s.pos;
+		size_t sigsegv = CreateSignature((const unsigned char*)s.buffer, s.sz, 0);
+		size_t oldsz = s.sz;
 		std::vector<unsigned char> retval;
 		retval.resize(oldsz + sigsegv);
-		memcpy(retval.data(), s.ptr, oldsz);
+		memcpy(retval.data(), s.buffer, oldsz);
 		sigsegv = CreateSignature((unsigned char*)retval.data(), oldsz, (unsigned char*)retval.data() + oldsz);
 		return retval;
 	}
