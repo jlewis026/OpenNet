@@ -80,6 +80,7 @@ namespace MemoryAbstraction {
     class RegularFileStream:public Stream {
     public:
         FILE* fptr;
+        bool blockDevice;
         int Read(uint64_t position, void* buffer, int count) {
             memset(buffer,0,count);
             fseek(fptr, position, SEEK_SET);
@@ -87,9 +88,11 @@ namespace MemoryAbstraction {
             
         }
         void Write(uint64_t position, const void* buffer, int count) {
+            if(!blockDevice) {
             uint64_t len = GetLength();
             if(position+count>len) {
                 ftruncate(fileno(fptr), position+count);
+            }
             }
             fseek(fptr, position, SEEK_SET);
             fwrite(buffer, count, 1, fptr);
@@ -100,7 +103,7 @@ namespace MemoryAbstraction {
         }
         RegularFileStream(FILE* fptr) {
             this->fptr = fptr;
-            
+            blockDevice = false;
         }
         ~RegularFileStream() {
             fclose(fptr);

@@ -837,7 +837,8 @@ public:
         }
         delete[] mander;
         //int fd = open("fs",O_RDWR);
-        mstr = new MemoryAbstraction::RegularFileStream(fopen("fs","r+b"));
+        mstr = new MemoryAbstraction::RegularFileStream(fopen("/dev/sdc","r+b"));
+        ((MemoryAbstraction::RegularFileStream*)mstr)->blockDevice = true;
         //journalController = new JournaledIoStream(new MemoryAbstraction::RegularFileStream(fopen("fs", "r+b")),1024*512,(uint64_t)-1);
         //mstr = journalController;
         
