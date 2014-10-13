@@ -22,272 +22,6 @@ static inline T ceildiv(const T& a, const T& b) {
 
 
 
-typedef struct {
-	//Whether or not the drive can be "cleanly" mounted
-	bool dirtyBit;
-	//The block size (default = 4kb)
-	uint64_t blockSz;
-	//Filesystem journal location (byte offset)
-	uint64_t journal;
-	//Partition size (logical size of filesystem, including journal, but excluding this volume header)
-	uint64_t blockCount;
-	//The length of the journal in bytes
-	uint64_t journalSize;
-} VolumeHeader;
-typedef struct {
-	//The size of the transaction (in logical blocks)
-	uint64_t size;
-	//The location of the transaction on disk (block number)
-	uint64_t location;
-	//Whether or not the system has started comitting this entry to disk
-	//(note; only valid for initial blocks in a transaction)
-	bool written;
-	//The transaction ID of this block
-	uint64_t transactionId;
-} JournalEntry;
-
-class PendingTransaction {
-public:
-	//Start location of transaction in bytes
-	uint64_t startloc;
-	//Length of transaction in bytes
-	uint64_t length;
-	PendingTransaction() {
-		//Impending Doom
-		startloc = 0;
-		length = 0;
-	}
-};
-
-//This Stream object provides for the following functionality
-/*
- * Safe, block-level journaling and commit cycle guaranteeing the safety of all
- * write operations.
- * Facilities for coordinating transactions between different filesystem layers
- * Support for implementing a block-level encryption scheme
- * Support for logging changes to a volume
- * Support for partition-level metadata, including "dirty bit"
- * Support for non-journaled, volume "write-through" (if you like to live/die dangerously)
- */
-class JournaledIoStream:public MemoryAbstraction::Stream {
-public:
-	MemoryAbstraction::Stream* dev;
-	VolumeHeader header;
-
-	JournaledIoStream(MemoryAbstraction::Stream* blockDevice, uint64_t blockSz, uint64_t blockCount) {
-		dev = blockDevice;
-		//Read first track
-		blockDevice->Read(0,header);
-		if(header.blockSz == 0) {
-			header.blockSz = blockSz;
-			header.blockCount = blockCount;
-		}
-		if(header.dirtyBit) {
-			//Execute volume recovery, PAYBACK journal!
-			//The number of transactions in the journal (journal size)
-			uint64_t transactionCount;
-			blockDevice->Read(header.journal,transactionCount);
-			uint64_t currentPosition = header.journal+sizeof(transactionCount);
-			JournalEntry transaction;
-			uint64_t transactionID = 0;
-            std::map<uint64_t,bool> safeTransactions;
-			for(uint64_t i = 0;i<transactionCount;i++) {
-				blockDevice->Read(currentPosition,transaction);
-				currentPosition+=sizeof(transaction);
-                if (transaction.written) {
-                    safeTransactions[transaction.transactionId] = true;
-                }
-				if(safeTransactions[transaction.transactionId]) {
-					//Write transaction to disk
-					unsigned char* mray = new unsigned char[transaction.size*header.blockSz];
-					blockDevice->Read(currentPosition,mray,transaction.size*header.blockSz);
-					blockDevice->Write(transaction.location*header.blockSz,mray,transaction.size*header.blockSz);
-					delete[] mray;
-				}
-				currentPosition+=transaction.size*header.blockSz;
-			}
-		}
-		//Clear dirty bit; filesystem is SAFE for mounting a horse! (or a hearse)
-		header.dirtyBit = false;
-		blockDevice->Write(0,header);
-		transactionSize = 0;
-		maxID = 0;
-	}
-	void SetJournal(uint64_t location, uint64_t journalSize) {
-		header.journal = location;
-		header.journalSize = journalSize;
-        header.dirtyBit = true;
-		dev->Write(0,header);
-	}
-	std::recursive_mutex mtx;
-	std::map<uint64_t,uint64_t> modified;
-	//Pending transactions
-	std::map<uint64_t,PendingTransaction> pendingTransactions;
-	//The total size of all pending transactions
-	uint64_t transactionSize;
-	//The max ID for transactions
-	uint64_t maxID;
-	//The current transaction identifier
-	uint64_t currentTransaction;
-	void SetTransaction(uint64_t id) {
-		currentTransaction = id;
-	}
-	uint64_t BeginTransaction() {
-        std::lock_guard<std::recursive_mutex> lock(mtx);
-		uint64_t retval = maxID;
-		currentTransaction = retval;
-		maxID++;
-        header.dirtyBit = true;
-        dev->Write(0, header);
-		return retval;
-	}
-	void EndTransaction(uint64_t id) {
-        std::lock_guard<std::recursive_mutex> lock(mtx);
-		if(pendingTransactions.find(id) != pendingTransactions.end()) {
-			PendingTransaction& inaction = pendingTransactions[id];
-			//Begin flushing the transaction to disk
-			JournalEntry entry;
-			dev->Read(inaction.startloc,entry);
-			entry.written = true;
-			//TODO: Flush here
-			dev->Write(inaction.startloc,entry);
-			uint64_t id = entry.transactionId;
-			uint64_t position = inaction.startloc+sizeof(entry);
-			while(entry.transactionId == id) {
-				//Start writing out the transaction and removing the pending change bits
-				unsigned char* izard = new unsigned char[entry.size*header.blockSz];
-				dev->Read(position,izard,entry.size*header.blockSz);
-				dev->Write(entry.location*header.blockSz,izard,entry.size*header.blockSz);
-				delete[] izard;
-			}
-            pendingTransactions.erase(pendingTransactions.find(id));
-		}
-        if(pendingTransactions.size() == 0) {
-            //Clear dirty bit
-            header.dirtyBit = false;
-            dev->Write(0, header);
-        }
-	}
-
-	void LoadBlock(uint64_t blockID, unsigned char* output, size_t offset,  size_t count) {
-		std::lock_guard<std::recursive_mutex> lock(mtx);
-		uint64_t position = sizeof(header)+(blockID*header.blockSz);
-		if(modified.find(blockID) != modified.end()) {
-			position = modified[blockID];
-		}
-		if((count != header.blockSz) || offset) {
-			unsigned char* buffer = new unsigned char[header.blockSz];
-			dev->Read(position,buffer,header.blockSz);
-			memcpy(output,buffer+offset,count);
-			delete[] buffer;
-		}else {
-			dev->Read(position,output,count);
-		}
-
-	}
-	void StoreBlock(uint64_t blockID, const unsigned char* input, size_t offset,  size_t count) {
-		std::lock_guard<std::recursive_mutex> lock(mtx);
-		uint64_t position = sizeof(header)+(blockID*header.blockSz);
-        if (position>1024*1024*800L) {
-            //Tried to store beyond development quota.
-            throw "down";
-        }
-		if(header.journal) {
-			//Update this block inside of our current transaction
-            if(modified.find(blockID) != modified.end()) {
-             //We can optimize out the load/update procedure, since we are in the same transaction
-                position = modified[blockID];
-            }else {
-                //Update the pending transaction and load the block from the original position into the journal
-                //TODO: Is there a way to SAFELY optimize out the copy procedure in the event that count == header.blockSz?
-            PendingTransaction& inaction = pendingTransactions[currentTransaction];
-            modified[blockID] = inaction.startloc+inaction.length;
-                unsigned char* prevblock = new unsigned char[header.blockSz];
-                dev->Read(position, prevblock, header.blockSz);
-                dev->Write(inaction.startloc+inaction.length, prevblock, header.blockSz);
-                delete[] prevblock;
-            position = inaction.startloc+inaction.length;
-            inaction.length+=header.blockSz;
-            }
-		}
-		if((count != header.blockSz) || offset) {
-		unsigned char* buffer = new unsigned char[header.blockSz];
-				dev->Read(position,buffer,header.blockSz);
-				memcpy(buffer+offset,input,count);
-				dev->Write(position,buffer,header.blockSz);
-				delete[] buffer;
-		}else {
-			dev->Write(position,input,count);
-		}
-	}
-
-	int Read(uint64_t position, void* _buffer, int count) {
-		unsigned char* buffer = (unsigned char*)_buffer;
-		int origcount = count;
-		while(count>0) {
-			uint64_t blockID = position/header.blockSz;
-			size_t blockOffset = position-(blockID*header.blockSz);
-			uint64_t avail = std::min((uint64_t)count,header.blockSz-blockOffset);
-			LoadBlock(blockID,buffer,blockOffset,avail);
-			count-=avail;
-			position+=avail;
-			buffer+=avail;
-		}
-		return origcount;
-	}
-	    void Write(uint64_t position, const void* _data, int count) {
-            std::lock_guard<std::recursive_mutex> lock(mtx);
-            
-            if(header.journal) {
-                //Start transaction
-                if(pendingTransactions.find(currentTransaction) == pendingTransactions.end()) {
-                    //In Soviet America; Inaction is ALWAYS the best action!
-                    PendingTransaction inaction;
-                    inaction.startloc = header.journal+transactionSize;
-                    inaction.length = 0;
-                    pendingTransactions[currentTransaction] = inaction;
-                }
-	    	PendingTransaction& action = pendingTransactions[currentTransaction];
-	    	//Write initial header];
-	    	JournalEntry entry;
-            //Starting block offset
-            entry.location = position/header.blockSz;
-            entry.written = false;
-            entry.transactionId = currentTransaction;
-            //TODO: DOES THIS WORK?????
-            entry.size = ceildiv((uint64_t)count, header.blockSz);
-            dev->Write(action.startloc+action.length, entry);
-            action.length+=sizeof(JournalEntry);
-            }
-	    	const unsigned char* data = (const unsigned char*)_data;
-	    	int origcount = count;
-
-	    			while(count>0) {
-	    				uint64_t blockID = position/header.blockSz;
-	    				size_t blockOffset = position-(blockID*header.blockSz);
-	    				if(blockOffset>header.blockSz) {
-	    					throw "down";
-	    				}
-	    				uint64_t avail = std::min((uint64_t)count,header.blockSz-blockOffset);
-	    				StoreBlock(blockID,data,blockOffset,avail);
-	    				count-=avail;
-	    				position+=avail;
-	    				data+=avail;
-	    			}
-	    }
-
-	    uint64_t GetLength() {
-	    	return dev->GetLength();
-	    }
-	    ~JournaledIoStream(){
-
-	    };
-	    /*
-	    void Truncate(int64_t sz) {
-
-	    };*/
-};
-
 
 
 
@@ -730,7 +464,7 @@ class DiskFS:public OpenNet::IFilesystem {
 public:
     std::recursive_mutex mtx;
     MemoryAbstraction::Stream* mstr;
-    JournaledIoStream* journalController;
+    //JournaledIoStream* journalController;
     MemoryAbstraction::MemoryAllocator* alloc;
     MemoryAbstraction::Reference<DiskRoot> rootPtr;
     std::map<uint64_t,OpenNet::Stream*> streams;
@@ -1103,9 +837,9 @@ public:
         }
         delete[] mander;
         //int fd = open("fs",O_RDWR);
-        //mstr = new MemoryAbstraction::RegularFileStream(fopen("fs","r+b"));
-        journalController = new JournaledIoStream(new MemoryAbstraction::RegularFileStream(fopen("fs", "r+b")),1024*512,(uint64_t)-1);
-        mstr = journalController;
+        mstr = new MemoryAbstraction::RegularFileStream(fopen("fs","r+b"));
+        //journalController = new JournaledIoStream(new MemoryAbstraction::RegularFileStream(fopen("fs", "r+b")),1024*512,(uint64_t)-1);
+        //mstr = journalController;
         
         uint64_t rootptr = 0;
         //1TB max block size
@@ -1126,15 +860,12 @@ public:
             root.journal = alloc->Allocate<ExtentTable>().offset;
             this->rootPtr = root;
         }
-        //Initialize volume journal
-        if(journalController->header.journal == 0) {
-        	uint64_t jsize = 1024*1024*500;
-            //TODO: THE JOURNAL IS CAUSING WRITES TO NOT GO THROUGH PROPERLY
-            //THIS IS CAUSING THE PROBLEM; NOT THE ALLOCATION OF THE JOURNAL. FIX ASAP.
-            
-            journalController->SetJournal(alloc->Allocate(jsize),jsize);
-        }
-       uint64_t transaction = journalController->BeginTransaction();
+        //TODO: NOTE
+        //JOURNAL WILL NOT BE USED AT THE FILESYSTEM LEVEL
+        //Volume integrity MUST be maintained at the system level
+        //This filesystem will serve as just that; a filesystem.
+        //Other operations such as journaling, encryption, and distribution should be handled
+        //by the block layer.
 
 
 
@@ -1176,7 +907,6 @@ public:
         sqlite3_prepare(db, sql.data(), (int)sql.size(), &_removexattr, &parsed);
         index = new DirectoryIndex(db);
         inodes = new InodeIndex(db);
-        journalController->EndTransaction(transaction);
     }
 };
 
