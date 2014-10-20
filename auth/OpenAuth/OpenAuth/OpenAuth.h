@@ -3,6 +3,7 @@
 #ifndef OpenNet_Auth
 #define OpenNet_Auth
 #include <stdint.h>
+#include <stdlib.h>
 extern "C" {
 	void* Initialize();
 }

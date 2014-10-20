@@ -24,21 +24,6 @@ static inline T ceildiv(const T& a, const T& b) {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 class DiskRoot {
 public:
     uint64_t rootdb;
@@ -827,9 +812,10 @@ public:
         char* mander = new char[1024*1024];
         struct stat ms;
         memset(mander,0,1024*1024);
-        if(stat("fs",&ms)) {
+        const char* mountloc = "/mntpnt/test/fs";
+        if(stat(mountloc,&ms)) {
             
-            FILE* mptr = fopen("fs","wb");
+            FILE* mptr = fopen(mountloc,"wb");
             /*for(uint64_t i = 0;i<sz;i+=1024*1024) {
                 fwrite(mander,1,1024*1024,mptr);
             }*/
@@ -837,7 +823,7 @@ public:
         }
         delete[] mander;
         //int fd = open("fs",O_RDWR);
-        mstr = new MemoryAbstraction::RegularFileStream(fopen("/dev/sdc","r+b"));
+        mstr = new MemoryAbstraction::RegularFileStream(fopen(mountloc,"r+b"));
         ((MemoryAbstraction::RegularFileStream*)mstr)->blockDevice = true;
         //journalController = new JournaledIoStream(new MemoryAbstraction::RegularFileStream(fopen("fs", "r+b")),1024*512,(uint64_t)-1);
         //mstr = journalController;

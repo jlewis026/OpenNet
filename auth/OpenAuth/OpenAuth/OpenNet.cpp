@@ -1,10 +1,10 @@
 #include "OpenAuth.h"
 #include "sqlite3.h"
+#include <string.h>
 #include <string>
 #include <vector>
 #include <map>
 #include <algorithm>
-#include <OpenNet.h>
 std::string string_to_hex(const unsigned char* input, size_t len)
 {
 	static const char* const lut = "0123456789ABCDEF";
@@ -120,11 +120,11 @@ public:
 	}
 	template<typename T>
 	void Read(T& val) {
-		Read(pos, (unsigned char*)&val, sizeof(val));
+        Read((unsigned char*)&val, sizeof(val));
 	}
 	template<typename T>
 	void Write(const T& val) {
-		Write(pos, (unsigned char*)&val, sizeof(val));
+        Write((unsigned char*)&val, sizeof(val));
 	}
 	SafeBuffer(void* ptr, size_t sz) {
 		this->ptr = ptr;
