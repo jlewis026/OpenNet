@@ -812,22 +812,19 @@ public:
         char* mander = new char[1024*1024];
         struct stat ms;
         memset(mander,0,1024*1024);
-        const char* mountloc = "/mntpnt/test/fs";
+        const char* mountloc = "/dev/sdc";
         if(stat(mountloc,&ms)) {
             
-            FILE* mptr = fopen(mountloc,"wb");
+            //FILE* mptr = fopen(mountloc,"wb");
             /*for(uint64_t i = 0;i<sz;i+=1024*1024) {
                 fwrite(mander,1,1024*1024,mptr);
             }*/
-            fclose(mptr);
+            //fclose(mptr);
         }
         delete[] mander;
-        //int fd = open("fs",O_RDWR);
         mstr = new MemoryAbstraction::RegularFileStream(fopen(mountloc,"r+b"));
         ((MemoryAbstraction::RegularFileStream*)mstr)->blockDevice = true;
-        //journalController = new JournaledIoStream(new MemoryAbstraction::RegularFileStream(fopen("fs", "r+b")),1024*512,(uint64_t)-1);
-        //mstr = journalController;
-        
+
         uint64_t rootptr = 0;
         //1TB max block size
         alloc = new MemoryAbstraction::MemoryAllocator(mstr,rootptr,-1);
