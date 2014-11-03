@@ -812,18 +812,18 @@ public:
         char* mander = new char[1024*1024];
         struct stat ms;
         memset(mander,0,1024*1024);
-        const char* mountloc = "/dev/sdc";
+        const char* mountloc = "fs";
         if(stat(mountloc,&ms)) {
             
-            //FILE* mptr = fopen(mountloc,"wb");
-            /*for(uint64_t i = 0;i<sz;i+=1024*1024) {
+            FILE* mptr = fopen(mountloc,"wb");
+            for(uint64_t i = 0;i<sz;i+=1024*1024) {
                 fwrite(mander,1,1024*1024,mptr);
-            }*/
-            //fclose(mptr);
+            }
+            fclose(mptr);
         }
         delete[] mander;
         mstr = new MemoryAbstraction::RegularFileStream(fopen(mountloc,"r+b"));
-        ((MemoryAbstraction::RegularFileStream*)mstr)->blockDevice = true;
+        ((MemoryAbstraction::RegularFileStream*)mstr)->blockDevice = false;
 
         uint64_t rootptr = 0;
         //1TB max block size

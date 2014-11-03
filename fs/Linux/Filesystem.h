@@ -101,7 +101,10 @@ public:
             }else {
                 unsigned char* block = new unsigned char[cacheSz];
                 ReadBlock(alignment,block);
-
+                size_t blockOffset = (size_t)(position-alignment);
+                int blockAvail = std::min(count,cacheSz-blockOffset);
+                memcpy(block+blockOffset,mander,blockAvail);
+                WriteBlock(position,block);
                 delete[] block;
             }
         }
@@ -121,8 +124,6 @@ public:
     }
 
     void WriteBlock(uint64_t position, const void *buffer) {
-        //First; align the block to the cache boundary
-
         mtx.lock();
         //Check to see if dirty
         if(dirtyBlocks.find(position)) {

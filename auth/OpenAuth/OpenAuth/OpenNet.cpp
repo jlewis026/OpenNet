@@ -92,46 +92,7 @@ public:
 		}
 	}
 };
-class SafeBuffer {
-public:
-	void* ptr;
-	size_t sz;
-	int Read(unsigned char* buffer, int count) {
-		if (pos + count > sz) {
-			throw "up";
-		}
 
-		memcpy(buffer, ((unsigned char*)ptr) + pos, count);
-
-		pos += count;
-		return count;
-	}
-	void Write(unsigned char* data, int count) {
-		if (pos + count > sz) {
-			throw "up";
-		}
-		memcpy(((unsigned char*)ptr) + pos, data, count);
-
-		pos += count;
-	}
-	size_t pos;
-	int64_t GetLength() {
-		return (int64_t)sz;
-	}
-	template<typename T>
-	void Read(T& val) {
-        Read((unsigned char*)&val, sizeof(val));
-	}
-	template<typename T>
-	void Write(const T& val) {
-        Write((unsigned char*)&val, sizeof(val));
-	}
-	SafeBuffer(void* ptr, size_t sz) {
-		this->ptr = ptr;
-		this->sz = sz;
-		pos = 0;
-	}
-};
 class Certificate:public IDisposable {
 public:
 	std::vector<unsigned char> PublicKey;
@@ -139,8 +100,7 @@ public:
 	std::string Authority;
 	std::map<std::string, std::vector<unsigned char>> Properties;
 	std::vector<unsigned char> SignProperties() {
-		//Max size limit is stupid
-		
+
 		SafeResizableBuffer s;
 		//Message at beginning; signature at end
 		uint32_t ct = (uint32_t)Properties.size();
@@ -154,12 +114,12 @@ public:
 			s.Write(it->second.data(), (int)it->second.size());
 		}
 
-		size_t sigsegv = CreateSignature((const unsigned char*)s.buffer, s.sz, 0);
+        size_t sigsegv = CreateSignature((const unsigned char*)s.buffer, s.sz,PrivateKey.data(), 0);
 		size_t oldsz = s.sz;
 		std::vector<unsigned char> retval;
 		retval.resize(oldsz + sigsegv);
 		memcpy(retval.data(), s.buffer, oldsz);
-		sigsegv = CreateSignature((unsigned char*)retval.data(), oldsz, (unsigned char*)retval.data() + oldsz);
+        sigsegv = CreateSignature((unsigned char*)retval.data(), oldsz,PrivateKey.data(), (unsigned char*)retval.data() + oldsz);
 		return retval;
 	}
 };
@@ -170,18 +130,14 @@ public:
 	sqlite3_stmt* command_addobject;
 	sqlite3_stmt* command_addkey;
 	sqlite3_stmt* command_findcert;
+    sqlite3_stmt* command_getPrivateKeys;
 	bool AddCertificate(Certificate* cert) {
 		void* hash = CreateHash();
 		UpdateHash(hash, cert->PublicKey.data(), cert->PublicKey.size());
 		//Use Unsigned Charizard's thumbprint
 		unsigned char izard[20];
 		FinalizeHash(hash, izard);
-		//Verify authority (if exists)
-		if (cert->Authority.size() != 0) {
-			//TODO: Search by authority
-			printf("TODO: AUTHORITY SCAN NOT YET IMPLEMENTED\n");
-			return false;
-		}
+
 		
 		std::string thumbprint = string_to_hex(izard,20);
 		sqlite3_bind_text(command_addcert, 1, thumbprint.data(), thumbprint.size(), 0);
@@ -193,7 +149,20 @@ public:
 		
 		sqlite3_reset(command_addcert);
 		if (val == SQLITE_DONE) {
-			return true;
+            if(cert->PrivateKey.size()) {
+                //Add private key to database
+                hash = CreateHash();
+                unsigned char* data = cert->PrivateKey.data();
+                UpdateHash(hash,data,cert->PrivateKey.size());
+                FinalizeHash(hash,izard);
+                thumbprint = string_to_hex(data,20);
+                sqlite3_bind_text(command_addkey,1,thumbprint.data(),thumbprint.size(),0);
+                sqlite3_bind_blob(command_addkey,2,data,cert->PrivateKey.size(),0);
+                while((val = sqlite3_step(command_addkey)) != SQLITE_DONE){};
+                return true;
+
+            }
+            return true;
 		}
 		return false;
 	}
@@ -229,7 +198,7 @@ public:
 		sqlite3_open("keydb.db", &db);
 		char* err;
 		//The thumbprint is a hash of the public key
-		sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS Certificates (Thumbprint TEXT, PublicKey BLOB, Authority TEXT, SignedAttributes BLOB PRIMARY KEY(Thumbprint))",0,0,&err);
+        sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS Certificates (Thumbprint TEXT, PublicKey BLOB, Authority TEXT, SignedAttributes BLOB, PRIMARY KEY(Thumbprint))",0,0,&err);
 		sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS NamedObjects (Name TEXT, Authority TEXT, SignedData BLOB)", 0, 0, &err);
 		sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS PrivateKeys (Thumbprint TEXT, PrivateKey BLOB)",0,0,&err);
 		std::string sql = "INSERT INTO Certificates VALUES (?, ?, ?, ?)";
@@ -240,8 +209,32 @@ public:
 		sql = "INSERT INTO PrivateKeys VALUES (?, ?)";
 		sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_addkey, &parsed);
 		sql = "SELECT * FROM Certificates WHERE Thumprint = ?";
-		sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_findcert, &parsed);
+        sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_findcert, &parsed);
 
+        sql = "SELECT * FROM PrivateKeys";
+        sqlite3_prepare(db,sql.data(),(int)sql.size(),&command_getPrivateKeys,&parsed);
+        int status = 0;
+        bool hasKey = false;
+        while((status = sqlite3_step(command_getPrivateKeys)) != SQLITE_DONE) {
+            if(status == SQLITE_ROW) {
+            hasKey = true;
+            }
+
+        }
+        if(!hasKey) {
+            //Create a new key
+            Certificate cert;
+            size_t keylen;
+            size_t publen;
+            unsigned char* key = CreatePrivateKey(&keylen,&publen);
+            cert.PrivateKey.resize(keylen);
+            memcpy(cert.PrivateKey.data(),key,keylen);
+            cert.PublicKey.resize(publen);
+            memcpy(cert.PublicKey.data(),key,publen);
+            if(!AddCertificate(&cert)) {
+                throw "sideways";
+            }
+        }
 
 	}
 	~KeyDatabase() {
@@ -251,7 +244,7 @@ public:
 };
 
 extern "C" {
-	void* Initialize() {
+    void* OpenNet_OAuthInitialize() {
 		return new KeyDatabase();
 	}
 }

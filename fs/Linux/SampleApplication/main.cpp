@@ -29,10 +29,10 @@ static void ConvertToStat(const FileInformation& info, struct stat& output) {
 
     if(info.isFile){
         output.st_mode = S_IFREG | 0777;
-        //output.st_mode = info.permissions;
+        //output.st_mode = info.permissions | S_IFREG;
     }else {
         output.st_mode = S_IFDIR | 0777;
-        //output.st_mode = info.permissions;
+        //output.st_mode = info.permissions | S_IFDIR;
     }
 
     output.st_uid = info.owner;

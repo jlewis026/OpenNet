@@ -8,6 +8,7 @@ G++=g++
 all: $(SOURCES) $(EXECUTABLE)
 $(EXECUTABLE): $(OBJECTS)
 	g++ --std=c++0x --shared -g $(OBJECTS) $(LDFLAGS) -Wl,-rpath . -o $@
+	cp libOpenAuth.so Samples/
 .c.o:
 	gcc -fPIC -g $(CFLAGS) $< -o $@
 .cpp.o:
