@@ -17,8 +17,8 @@ typedef struct {
 } NamedObject;
 extern "C" {
     void* OpenNet_OAuthInitialize();
-    void OpenNet_Retrieve(void* db, const char* name, void(*callback)(struct NamedObject* obj));
-    bool AddObject(void* db, const char* name, const struct NamedObject* obj);
+    void OpenNet_Retrieve(void* db, const char* name, void(*callback)(NamedObject* obj));
+    bool AddObject(void* db, const char* name, const NamedObject* obj);
 }
 
 
