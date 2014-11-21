@@ -5,8 +5,20 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+typedef struct {
+    //The authority who signed the blob
+    char* authority;
+    //The blob
+    unsigned char* blob;
+    //The length of the blob
+    size_t bloblen;
+    unsigned char* signature;
+    size_t siglen;
+} NamedObject;
 extern "C" {
     void* OpenNet_OAuthInitialize();
+    void OpenNet_Retrieve(void* db, const char* name, void(*callback)(struct NamedObject* obj));
+    bool AddObject(void* db, const char* name, const struct NamedObject* obj);
 }
 
 

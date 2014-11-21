@@ -131,7 +131,8 @@ public:
 	sqlite3_stmt* command_addkey;
 	sqlite3_stmt* command_findcert;
     sqlite3_stmt* command_getPrivateKeys;
-	bool AddCertificate(Certificate* cert) {
+    sqlite3_stmt* command_findObject;
+    bool AddCertificate(Certificate* cert) {
 		void* hash = CreateHash();
 		UpdateHash(hash, cert->PublicKey.data(), cert->PublicKey.size());
 		//Use Unsigned Charizard's thumbprint
@@ -194,22 +195,25 @@ public:
 			}
 		}
 	}
+
 	KeyDatabase() {
 		sqlite3_open("keydb.db", &db);
 		char* err;
 		//The thumbprint is a hash of the public key
         sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS Certificates (Thumbprint TEXT, PublicKey BLOB, Authority TEXT, SignedAttributes BLOB, PRIMARY KEY(Thumbprint))",0,0,&err);
-		sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS NamedObjects (Name TEXT, Authority TEXT, SignedData BLOB)", 0, 0, &err);
+        sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS NamedObjects (Name TEXT, Authority TEXT, Signature BLOB, SignedData BLOB)", 0, 0, &err);
 		sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS PrivateKeys (Thumbprint TEXT, PrivateKey BLOB)",0,0,&err);
 		std::string sql = "INSERT INTO Certificates VALUES (?, ?, ?, ?)";
 		const char* parsed;
 		sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_addcert, &parsed);
-		sql = "INSERT INTO NamedObjects VALUES (?, ?, ?)";
+        sql = "INSERT INTO NamedObjects VALUES (?, ?, ?, ?)";
 		sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_addobject, &parsed);
 		sql = "INSERT INTO PrivateKeys VALUES (?, ?)";
 		sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_addkey, &parsed);
 		sql = "SELECT * FROM Certificates WHERE Thumprint = ?";
         sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_findcert, &parsed);
+        sql = "SELECT * FROM NamedObjects WHERE Name = ?";
+        sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_findObject, &parsed);
 
         sql = "SELECT * FROM PrivateKeys";
         sqlite3_prepare(db,sql.data(),(int)sql.size(),&command_getPrivateKeys,&parsed);
@@ -237,6 +241,50 @@ public:
         }
 
 	}
+    bool AddObject(const struct NamedObject& obj, const char* name) {
+        //Adds a named object to the database
+        //Verify signature on BOTH name and data
+        bool foundAuthority = false;
+        Certificate* cert = FindCertificate(obj.authority);
+        if(!cert) {
+            return false;
+        }
+        size_t slen = strlen(name)+1;
+        unsigned char* mander = new unsigned char[slen+obj.bloblen];
+        memcpy(mander,name,slen);
+        memcpy(mander+slen,obj.blob,obj.bloblen);
+        bool retval = VerifySignature(mander,slen+obj.bloblen,obj.signature,obj.siglen);
+        delete[] mander;
+        if(retval) {
+            //Name TEXT, Authority TEXT, Signature BLOB, SignedData BLOB
+            sqlite3_bind_text(command_addobject,1,slen-1,0);
+            sqlite3_bind_text(command_addobject,2,obj.authority,strlen(obj.authority),0);
+            sqlite3_bind_blob(command_addobject,3,obj.signature,obj.siglen,0);
+            sqlite3_bind_blob(command_addobject,4,obj.blob,obj.bloblen,0);
+            while(sqlite3_step(command_addobject) != SQLITE_DONE) {}
+            sqlite3_reset(command_addobject);
+        }
+        return retval;
+    }
+    void RetrieveObject(const char* name, void(*callback)(struct NamedObject* val)) {
+
+        NamedObject output;
+        sqlite3_bind_text(command_findObject,1,name,strlen(name),0);
+        int val;
+        while((val = sqlite3_step(command_findObject)) != SQLITE_DONE) {
+            if(val == SQLITE_ROW) {
+                output.authority = sqlite3_column_text(command_findObject,2);
+                output.signature = sqlite3_column_blob(command_findObject,3);
+                output.siglen = sqlite3_column_bytes(command_findObject,3);
+                output.blob = sqlite3_column_blob(command_findObject,4);
+                output.bloblen = sqlite3_column_bytes(command_findObject,4);
+                callback(&output);
+                break;
+            }
+        }
+        sqlite3_reset(command_findObject);
+    }
+
 	~KeyDatabase() {
 		sqlite3_finalize(command_addcert);
 		sqlite3_close(db);
@@ -246,5 +294,14 @@ public:
 extern "C" {
     void* OpenNet_OAuthInitialize() {
 		return new KeyDatabase();
-	}
+    }
+    bool AddObject(void* db, const char* name, const struct NamedObject* obj) {
+        KeyDatabase* keydb = (KeyDatabase*)db;
+        keydb->AddObject(*obj,name);
+    }
+
+    void OpenNet_Retrieve(void* db, const char* name, void(*callback)(struct NamedObject* obj)) {
+        KeyDatabase* keydb = (KeyDatabase*)db;
+        keydb->RetrieveObject(value,callback);
+    }
 }
