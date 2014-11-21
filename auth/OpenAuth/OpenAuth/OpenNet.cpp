@@ -132,6 +132,7 @@ public:
 	sqlite3_stmt* command_findcert;
     sqlite3_stmt* command_getPrivateKeys;
     sqlite3_stmt* command_findObject;
+    sqlite3_stmt* command_findPrivateKey;
     bool AddCertificate(Certificate* cert) {
 		void* hash = CreateHash();
 		UpdateHash(hash, cert->PublicKey.data(), cert->PublicKey.size());
@@ -189,12 +190,39 @@ public:
 						throw "up";
 					}
 					s.Read((unsigned char*)propname,sz);
-					s.Read(sz);
-					
+                    s.Read(sz);
+
 				}
+                break;
 			}
 		}
+        sqlite3_reset(command_findcert);
+        if(retval) {
+            //Locate private key
+            while((val = sqlite3_step(command_findPrivateKey)) != SQLITE_DONE) {
+                if(val == SQLITE_ROW) {
+                const void* data = sqlite3_column_blob(command_findPrivateKey,1);
+                size_t sz = sqlite3_column_bytes(command_findPrivateKey,1);
+                retval->PrivateKey.resize(sz);
+                memcpy(retval->PrivateKey.data(),data,sz);
+                break;
+                }
+            }
+            sqlite3_reset(command_findPrivateKey);
+        }
+        return retval;
 	}
+    void EnumeratePrivateKeys(bool(*callback)(const char* thumbprint)) {
+        int val;
+        while((val = sqlite3_step(command_getPrivateKeys)) != SQLITE_DONE) {
+            if(val == SQLITE_ROW) {
+                if(!callback((const char*)sqlite3_column_text(command_getPrivateKeys,0))) {
+                    break;
+                }
+            }
+        }
+        sqlite3_reset(command_getPrivateKeys);
+    }
 
 	KeyDatabase() {
 		sqlite3_open("keydb.db", &db);
@@ -202,7 +230,7 @@ public:
 		//The thumbprint is a hash of the public key
         sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS Certificates (Thumbprint TEXT, PublicKey BLOB, Authority TEXT, SignedAttributes BLOB, PRIMARY KEY(Thumbprint))",0,0,&err);
         sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS NamedObjects (Name TEXT, Authority TEXT, Signature BLOB, SignedData BLOB)", 0, 0, &err);
-		sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS PrivateKeys (Thumbprint TEXT, PrivateKey BLOB)",0,0,&err);
+        sqlite3_exec(db, "CREATE TABLE IF NOT EXISTS PrivateKeys (Thumbprint TEXT PRIMARY KEY, PrivateKey BLOB)",0,0,&err);
 		std::string sql = "INSERT INTO Certificates VALUES (?, ?, ?, ?)";
 		const char* parsed;
 		sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_addcert, &parsed);
@@ -210,11 +238,12 @@ public:
 		sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_addobject, &parsed);
 		sql = "INSERT INTO PrivateKeys VALUES (?, ?)";
 		sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_addkey, &parsed);
-		sql = "SELECT * FROM Certificates WHERE Thumprint = ?";
+        sql = "SELECT * FROM Certificates WHERE Thumprint = ?";
         sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_findcert, &parsed);
         sql = "SELECT * FROM NamedObjects WHERE Name = ?";
         sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_findObject, &parsed);
-
+        sql = "SELECT * FROM PrivateKeys WHERE Thumbprint = ?";
+        sqlite3_prepare(db, sql.data(), (int)sql.size(), &command_findPrivateKey, &parsed);
         sql = "SELECT * FROM PrivateKeys";
         sqlite3_prepare(db,sql.data(),(int)sql.size(),&command_getPrivateKeys,&parsed);
         int status = 0;
@@ -273,18 +302,17 @@ public:
         int val;
         while((val = sqlite3_step(command_findObject)) != SQLITE_DONE) {
             if(val == SQLITE_ROW) {
-                output.authority = (char*)sqlite3_column_text(command_findObject,2);
-                output.signature = (unsigned char*)sqlite3_column_blob(command_findObject,3);
-                output.siglen = sqlite3_column_bytes(command_findObject,3);
-                output.blob = (unsigned char*)sqlite3_column_blob(command_findObject,4);
-                output.bloblen = sqlite3_column_bytes(command_findObject,4);
+                output.authority = (char*)sqlite3_column_text(command_findObject,1);
+                output.signature = (unsigned char*)sqlite3_column_blob(command_findObject,2);
+                output.siglen = sqlite3_column_bytes(command_findObject,2);
+                output.blob = (unsigned char*)sqlite3_column_blob(command_findObject,3);
+                output.bloblen = sqlite3_column_bytes(command_findObject,3);
                 callback(&output);
                 break;
             }
         }
         sqlite3_reset(command_findObject);
     }
-
 	~KeyDatabase() {
 		sqlite3_finalize(command_addcert);
 		sqlite3_close(db);
