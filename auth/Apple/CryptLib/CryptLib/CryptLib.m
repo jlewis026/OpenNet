@@ -5,7 +5,6 @@
 //  Created by Brian Bosak on 11/22/14.
 //  Copyright (c) 2014 Brian Bosak. All rights reserved.
 //
-
 #import "CryptLib.h"
 #include "OpenAuth.h"
 @implementation CryptLib {
@@ -23,8 +22,6 @@
 }
 @end
 
-
-//Platform-specific crypto stuff
 void* CreateHash() {
     
 }

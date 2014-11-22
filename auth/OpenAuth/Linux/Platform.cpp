@@ -1,3 +1,11 @@
+//This is what Platform.cpp looks like. Read over it and let me know if you have questions.
+//So this is setting up the needs of the app on the linux platform?
+//yes; this contains all necessary platform exports for Linux. what about ios?
+//On iOS these functions need to be re-written. in obj-c/?
+//Yes; they must be written in Objective-C.  so thats my job? Yes; for the first part of the project.
+//Next part will be UI design. I'll let you do that too. ok sweet.
+//Any questions as to how to get started on this?  nope not yet.  just rewriting to woek on ios
+//Yes. It's not as trivial as it sounds.  I would assume not.
 // This is the main DLL file.
 
 
