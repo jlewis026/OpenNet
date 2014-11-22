@@ -15,14 +15,18 @@ typedef struct {
     unsigned char* signature;
     size_t siglen;
 } NamedObject;
+#ifdef __cplusplus
 extern "C" {
+#endif
     void* OpenNet_OAuthInitialize();
     void OpenNet_Retrieve(void* db, const char* name, void(*callback)(NamedObject* obj));
     bool AddObject(void* db, const char* name, const NamedObject* obj);
+    void OpenNet_OAuthDestroy(void* db);
+#ifdef __cplusplus
 }
+#endif
 
-
-
+#ifdef __cplusplus
 //OS-Specific routines
 extern "C" {
 	//Creates a 20-byte hash
@@ -75,4 +79,6 @@ public:
         pos = 0;
     }
 };
+
+#endif
 #endif

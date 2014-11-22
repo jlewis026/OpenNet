@@ -329,6 +329,9 @@ extern "C" {
     void* OpenNet_OAuthInitialize() {
 		return new KeyDatabase();
     }
+    void OpenNet_OAuthDestroy(void* db) {
+        delete (KeyDatabase*)db;
+    }
     bool AddObject(void* db, const char* name, const NamedObject* obj) {
         KeyDatabase* keydb = (KeyDatabase*)db;
         return keydb->AddObject(*obj,name);
