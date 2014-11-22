@@ -1,0 +1,381 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 46;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		D3A1F3EB1A20F03300C25F2C /* CryptLib.h in CopyFiles */ = {isa = PBXBuildFile; fileRef = D3A1F3EA1A20F03300C25F2C /* CryptLib.h */; };
+		D3A1F3ED1A20F03300C25F2C /* CryptLib.m in Sources */ = {isa = PBXBuildFile; fileRef = D3A1F3EC1A20F03300C25F2C /* CryptLib.m */; };
+		D3A1F3F31A20F03300C25F2C /* libCryptLib.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D3A1F3E71A20F03300C25F2C /* libCryptLib.a */; };
+		D3A1F4041A20F1B200C25F2C /* OpenNet.cpp in Sources */ = {isa = PBXBuildFile; fileRef = D3A1F4011A20F1B200C25F2C /* OpenNet.cpp */; };
+		D3A1F4051A20F1B200C25F2C /* sqlite3.c in Sources */ = {isa = PBXBuildFile; fileRef = D3A1F4021A20F1B200C25F2C /* sqlite3.c */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		D3A1F3F41A20F03300C25F2C /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D3A1F3DF1A20F03300C25F2C /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = D3A1F3E61A20F03300C25F2C;
+			remoteInfo = CryptLib;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		D3A1F3E51A20F03300C25F2C /* CopyFiles */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "include/$(PRODUCT_NAME)";
+			dstSubfolderSpec = 16;
+			files = (
+				D3A1F3EB1A20F03300C25F2C /* CryptLib.h in CopyFiles */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		D3A1F3E71A20F03300C25F2C /* libCryptLib.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libCryptLib.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3A1F3EA1A20F03300C25F2C /* CryptLib.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CryptLib.h; sourceTree = "<group>"; };
+		D3A1F3EC1A20F03300C25F2C /* CryptLib.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CryptLib.m; sourceTree = "<group>"; };
+		D3A1F3F21A20F03300C25F2C /* CryptLibTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = CryptLibTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D3A1F3F81A20F03300C25F2C /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		D3A1F4011A20F1B200C25F2C /* OpenNet.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = OpenNet.cpp; path = ../../../OpenAuth/OpenAuth/OpenNet.cpp; sourceTree = "<group>"; };
+		D3A1F4021A20F1B200C25F2C /* sqlite3.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; name = sqlite3.c; path = ../../../OpenAuth/OpenAuth/sqlite3.c; sourceTree = "<group>"; };
+		D3A1F4031A20F1B200C25F2C /* sqlite3.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = sqlite3.h; path = ../../../OpenAuth/OpenAuth/sqlite3.h; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		D3A1F3E41A20F03300C25F2C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3A1F3EF1A20F03300C25F2C /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3A1F3F31A20F03300C25F2C /* libCryptLib.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		D3A1F3DE1A20F03300C25F2C = {
+			isa = PBXGroup;
+			children = (
+				D3A1F3E91A20F03300C25F2C /* CryptLib */,
+				D3A1F3F61A20F03300C25F2C /* CryptLibTests */,
+				D3A1F3E81A20F03300C25F2C /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		D3A1F3E81A20F03300C25F2C /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				D3A1F3E71A20F03300C25F2C /* libCryptLib.a */,
+				D3A1F3F21A20F03300C25F2C /* CryptLibTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		D3A1F3E91A20F03300C25F2C /* CryptLib */ = {
+			isa = PBXGroup;
+			children = (
+				D3A1F4011A20F1B200C25F2C /* OpenNet.cpp */,
+				D3A1F4021A20F1B200C25F2C /* sqlite3.c */,
+				D3A1F4031A20F1B200C25F2C /* sqlite3.h */,
+				D3A1F3EA1A20F03300C25F2C /* CryptLib.h */,
+				D3A1F3EC1A20F03300C25F2C /* CryptLib.m */,
+			);
+			path = CryptLib;
+			sourceTree = "<group>";
+		};
+		D3A1F3F61A20F03300C25F2C /* CryptLibTests */ = {
+			isa = PBXGroup;
+			children = (
+				D3A1F3F71A20F03300C25F2C /* Supporting Files */,
+			);
+			path = CryptLibTests;
+			sourceTree = "<group>";
+		};
+		D3A1F3F71A20F03300C25F2C /* Supporting Files */ = {
+			isa = PBXGroup;
+			children = (
+				D3A1F3F81A20F03300C25F2C /* Info.plist */,
+			);
+			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		D3A1F3E61A20F03300C25F2C /* CryptLib */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3A1F3FB1A20F03300C25F2C /* Build configuration list for PBXNativeTarget "CryptLib" */;
+			buildPhases = (
+				D3A1F3E31A20F03300C25F2C /* Sources */,
+				D3A1F3E41A20F03300C25F2C /* Frameworks */,
+				D3A1F3E51A20F03300C25F2C /* CopyFiles */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = CryptLib;
+			productName = CryptLib;
+			productReference = D3A1F3E71A20F03300C25F2C /* libCryptLib.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+		D3A1F3F11A20F03300C25F2C /* CryptLibTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D3A1F3FE1A20F03300C25F2C /* Build configuration list for PBXNativeTarget "CryptLibTests" */;
+			buildPhases = (
+				D3A1F3EE1A20F03300C25F2C /* Sources */,
+				D3A1F3EF1A20F03300C25F2C /* Frameworks */,
+				D3A1F3F01A20F03300C25F2C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				D3A1F3F51A20F03300C25F2C /* PBXTargetDependency */,
+			);
+			name = CryptLibTests;
+			productName = CryptLibTests;
+			productReference = D3A1F3F21A20F03300C25F2C /* CryptLibTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D3A1F3DF1A20F03300C25F2C /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				LastUpgradeCheck = 0610;
+				ORGANIZATIONNAME = "Brian Bosak";
+				TargetAttributes = {
+					D3A1F3E61A20F03300C25F2C = {
+						CreatedOnToolsVersion = 6.1;
+					};
+					D3A1F3F11A20F03300C25F2C = {
+						CreatedOnToolsVersion = 6.1;
+					};
+				};
+			};
+			buildConfigurationList = D3A1F3E21A20F03300C25F2C /* Build configuration list for PBXProject "CryptLib" */;
+			compatibilityVersion = "Xcode 3.2";
+			developmentRegion = English;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+			);
+			mainGroup = D3A1F3DE1A20F03300C25F2C;
+			productRefGroup = D3A1F3E81A20F03300C25F2C /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				D3A1F3E61A20F03300C25F2C /* CryptLib */,
+				D3A1F3F11A20F03300C25F2C /* CryptLibTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		D3A1F3F01A20F03300C25F2C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		D3A1F3E31A20F03300C25F2C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D3A1F3ED1A20F03300C25F2C /* CryptLib.m in Sources */,
+				D3A1F4051A20F1B200C25F2C /* sqlite3.c in Sources */,
+				D3A1F4041A20F1B200C25F2C /* OpenNet.cpp in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		D3A1F3EE1A20F03300C25F2C /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		D3A1F3F51A20F03300C25F2C /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = D3A1F3E61A20F03300C25F2C /* CryptLib */;
+			targetProxy = D3A1F3F41A20F03300C25F2C /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		D3A1F3F91A20F03300C25F2C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_SYMBOLS_PRIVATE_EXTERN = NO;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.1;
+				MTL_ENABLE_DEBUG_INFO = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = iphoneos;
+			};
+			name = Debug;
+		};
+		D3A1F3FA1A20F03300C25F2C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++0x";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu99;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 8.1;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				SDKROOT = iphoneos;
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
+		D3A1F3FC1A20F03300C25F2C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		D3A1F3FD1A20F03300C25F2C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				OTHER_LDFLAGS = "-ObjC";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+		D3A1F3FF1A20F03300C25F2C /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(inherited)",
+				);
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = CryptLibTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Debug;
+		};
+		D3A1F4001A20F03300C25F2C /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(SDKROOT)/Developer/Library/Frameworks",
+					"$(inherited)",
+				);
+				INFOPLIST_FILE = CryptLibTests/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_NAME = "$(TARGET_NAME)";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		D3A1F3E21A20F03300C25F2C /* Build configuration list for PBXProject "CryptLib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3A1F3F91A20F03300C25F2C /* Debug */,
+				D3A1F3FA1A20F03300C25F2C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		D3A1F3FB1A20F03300C25F2C /* Build configuration list for PBXNativeTarget "CryptLib" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3A1F3FC1A20F03300C25F2C /* Debug */,
+				D3A1F3FD1A20F03300C25F2C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+		D3A1F3FE1A20F03300C25F2C /* Build configuration list for PBXNativeTarget "CryptLibTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				D3A1F3FF1A20F03300C25F2C /* Debug */,
+				D3A1F4001A20F03300C25F2C /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D3A1F3DF1A20F03300C25F2C /* Project object */;
+}
