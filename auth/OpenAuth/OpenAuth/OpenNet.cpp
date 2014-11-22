@@ -315,6 +315,12 @@ public:
     }
 	~KeyDatabase() {
 		sqlite3_finalize(command_addcert);
+        sqlite3_finalize(command_addkey);
+        sqlite3_finalize(command_addobject);
+        sqlite3_finalize(command_findcert);
+        sqlite3_finalize(command_findObject);
+        sqlite3_finalize(command_findPrivateKey);
+        sqlite3_finalize(command_getPrivateKeys);
 		sqlite3_close(db);
 	}
 };
@@ -325,7 +331,8 @@ extern "C" {
     }
     bool AddObject(void* db, const char* name, const NamedObject* obj) {
         KeyDatabase* keydb = (KeyDatabase*)db;
-        keydb->AddObject(*obj,name);
+        return keydb->AddObject(*obj,name);
+        
     }
 
     void OpenNet_Retrieve(void* db, const char* name, void(*callback)(NamedObject* obj)) {
